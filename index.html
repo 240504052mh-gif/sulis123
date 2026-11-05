@@ -1,0 +1,382 @@
+
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TOKO.KITA - Belanja Online</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: Arial, sans-serif;
+      background: #f5f6fa;
+      color: #222;
+    }
+    header {
+      background: #176b55;
+      color: white;
+      padding: 18px 6%;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 15px;
+      flex-wrap: wrap;
+    }
+    header h2 { font-size: 25px; }
+    header input {
+      padding: 11px;
+      border: none;
+      border-radius: 7px;
+      width: min(350px, 100%);
+    }
+    .hero {
+      background: linear-gradient(120deg, #176b55, #45a789);
+      color: white;
+      text-align: center;
+      padding: 65px 20px;
+    }
+    .hero h1 { font-size: 36px; margin-bottom: 12px; }
+    .hero p { font-size: 17px; }
+    .container { padding: 30px 6%; }
+    .categories {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin: 20px 0;
+    }
+    button {
+      cursor: pointer;
+      border: none;
+      border-radius: 7px;
+      padding: 10px 15px;
+      background: #176b55;
+      color: white;
+    }
+    button:hover { opacity: .85; }
+    .categories button {
+      background: white;
+      color: #176b55;
+      border: 1px solid #176b55;
+    }
+    .categories button.active {
+      background: #176b55;
+      color: white;
+    }
+    .products {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+      gap: 20px;
+    }
+    .product {
+      background: white;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 3px 12px #00000010;
+    }
+    .product img {
+      width: 100%;
+      height: 170px;
+      object-fit: cover;
+      background: #eee;
+    }
+    .product-info { padding: 15px; }
+    .product-info h3 { margin-bottom: 8px; }
+    .price {
+      color: #176b55;
+      font-weight: bold;
+      margin: 10px 0;
+    }
+    .stock { font-size: 13px; color: #777; margin-bottom: 12px; }
+    .product button { width: 100%; }
+    .cart-panel {
+      background: white;
+      padding: 20px;
+      border-radius: 12px;
+      margin-top: 30px;
+      box-shadow: 0 3px 12px #00000010;
+    }
+    .cart-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      border-bottom: 1px solid #eee;
+      padding: 12px 0;
+    }
+    .cart-item button { padding: 6px 10px; }
+    .cart-panel input, .cart-panel textarea {
+      width: 100%;
+      padding: 11px;
+      margin: 8px 0 14px;
+      border: 1px solid #ccc;
+      border-radius: 7px;
+      font-family: inherit;
+    }
+    .total { font-size: 19px; font-weight: bold; margin: 18px 0; }
+    .checkout { width: 100%; background: #168b48; padding: 13px; }
+    footer {
+      margin-top: 40px;
+      background: #176b55;
+      color: white;
+      text-align: center;
+      padding: 22px;
+    }
+    @media(max-width: 600px) {
+      .hero h1 { font-size: 27px; }
+      header { justify-content: center; }
+      header input { width: 100%; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h2>TOKO.KITA</h2>
+  <input type="search" id="searchInput"
+    placeholder="Cari produk..." oninput="renderProducts()">
+  <button onclick="document.getElementById('keranjang').scrollIntoView()">
+    🛒 Keranjang (<span id="cartCount">0</span>)
+  </button>
+</header>
+
+<section class="hero">
+  <h1>Belanja Mudah, Semua Ada!</h1>
+  <p>Temukan berbagai produk pilihan dengan mudah di TOKO.KITA.</p>
+</section>
+
+<main class="container">
+  <h2>Daftar Produk</h2>
+  <div class="categories" id="categories">
+    <button class="active" onclick="setCategory('Semua', this)">Semua</button>
+    <button onclick="setCategory('Makanan', this)">Makanan</button>
+    <button onclick="setCategory('Minuman', this)">Minuman</button>
+    <button onclick="setCategory('Elektronik', this)">Elektronik</button>
+    <button onclick="setCategory('Aksesori', this)">Aksesori</button>
+  </div>
+
+  <div class="products" id="productList"></div>
+
+  <section class="cart-panel" id="keranjang">
+    <h2>🛒 Keranjang Belanja</h2>
+    <div id="cartItems">Keranjang masih kosong.</div>
+    <div class="total">Total: <span id="cartTotal">Rp0</span></div>
+
+    <h3>Data Pemesan</h3>
+    <input type="text" id="customerName" placeholder="Nama lengkap" required>
+    <input type="tel" id="customerPhone" placeholder="Nomor WhatsApp pembeli" required>
+    <textarea id="customerAddress" rows="3"
+      placeholder="Alamat lengkap pengiriman" required></textarea>
+
+    <button class="checkout" onclick="checkout()">
+      Pesan Sekarang melalui WhatsApp
+    </button>
+  </section>
+</main>
+
+<footer>
+  <p>© 2026 TOKO.KITA | Belanja Mudah dan Praktis</p>
+</footer>
+
+<script>
+  // PENGATURAN TOKO
+  // Masukkan URL Google Apps Script jika sudah tersedia.
+  const API_URL = "https://script.google.com/macros/s/AKfycbzMS5JSr5kq8M-j7WEA7I11PtXHBwi8f9BVXn6r4HdS6UDIbn3aySgoXwqTq1L0e7KF/exec";
+
+  // Nomor WhatsApp Admin (bisa diganti kapan saja).
+  const WA_ADMIN = "6283142121860";
+
+  // DAFTAR PRODUK
+  const products = [
+    {id:1, name:"Hamburger", category:"Makanan", price:300000, stock:40},
+    {id:2, name:"Pizza", category:"Makanan", price:100000, stock:50},
+    {id:3, name:"Donat", category:"Makanan", price:60000, stock:60},
+    {id:4, name:"Kue", category:"Makanan", price:70000, stock:30},
+    {id:5, name:"Mie", category:"Makanan", price:95000, stock:40},
+    {id:6, name:"Kentang Goreng", category:"Makanan", price:70000, stock:38},
+    {id:7, name:"Es Krim", category:"Makanan", price:135000, stock:36},
+    {id:8, name:"Cokelat", category:"Makanan", price:155000, stock:34},
+    {id:9, name:"Sandwich", category:"Makanan", price:175000, stock:32},
+    {id:10, name:"Ayam Goreng", category:"Makanan", price:195000, stock:30},
+    {id:11, name:"Es Boba", category:"Minuman", price:215000, stock:28},
+    {id:12, name:"Kopi", category:"Minuman", price:235000, stock:26},
+    {id:13, name:"Minuman Soda", category:"Minuman", price:255000, stock:24},
+    {id:14, name:"Jus Jeruk", category:"Minuman", price:275000, stock:22},
+    {id:15, name:"Susu", category:"Minuman", price:295000, stock:20},
+    {id:16, name:"Handphone", category:"Elektronik", price:315000, stock:18},
+    {id:17, name:"Laptop", category:"Elektronik", price:335000, stock:16},
+    {id:18, name:"Dompet", category:"Aksesori", price:355000, stock:12},
+    {id:19, name:"Tas Ransel", category:"Aksesori", price:375000, stock:10},
+    {id:20, name:"Lampu", category:"Aksesori", price:395000, stock:66}
+  ];
+
+  // GAMBAR PRODUK
+  const images = {
+    "Hamburger":"https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=500",
+    "Pizza":"https://images.unsplash.com/photo- pizza",
+    "Donat":"https://images.unsplash.com/photo-1551024506-0bccd828d307?w=500",
+    "Kue":"https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=500",
+    "Mie":"https://images.unsplash.com/photo-1569718212165-3a8278d5f624?w=500",
+    "Kentang Goreng":"https://images.unsplash.com/photo-1573080496219-bb080dd4f877?w=500",
+    "Es Krim":"https://images.unsplash.com/photo-1563805042-7684c019e1cb?w=500",
+    "Cokelat":"https://images.unsplash.com/photo-1548907040-4d42f7f5c4b7?w=500",
+    "Sandwich":"https://images.unsplash.com/photo-1528735602780-2552fd46c7af?w=500",
+    "Ayam Goreng":"https://images.unsplash.com/photo-1626082927389-6cd097cdc6ec?w=500",
+    "Es Boba":"https://images.unsplash.com/photo-1558857563-b371033873b8?w=500",
+    "Kopi":"https://images.unsplash.com/photo-1509042239860-f550ce710b93?w=500",
+    "Minuman Soda":"https://images.unsplash.com/photo-1513558161293-cdaf765edfd4?w=500",
+    "Jus Jeruk":"https://images.unsplash.com/photo-1600271886742-f049cd451bba?w=500",
+    "Susu":"https://images.unsplash.com/photo-1563636619-e9143da7973b?w=500",
+    "Handphone":"https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=500",
+    "Laptop":"https://images.unsplash.com/photo-1496181133206-80ce9b88a853?w=500",
+    "Dompet":"https://images.unsplash.com/photo-1627123424574-724758594e93?w=500",
+    "Tas Ransel":"https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=500",
+    "Lampu":"https://images.unsplash.com/photo-1507473885765-e6ed057f782c?w=500"
+  };
+
+  let cart = [];
+  let selectedCategory = "Semua";
+
+  function rupiah(value) {
+    return new Intl.NumberFormat("id-ID", {
+      style:"currency", currency:"IDR", maximumFractionDigits:0
+    }).format(value);
+  }
+
+  function renderProducts() {
+    const keyword = document.getElementById("searchInput").value.toLowerCase();
+    const list = document.getElementById("productList");
+
+    const filtered = products.filter(p =>
+      (selectedCategory === "Semua" || p.category === selectedCategory) &&
+      p.name.toLowerCase().includes(keyword)
+    );
+
+    list.innerHTML = filtered.map(p => `
+      <article class="product">
+        <img src="${images[p.name] || ''}"
+          alt="${p.name}"
+          onerror="this.src='https://placehold.co/500x350?text=Produk'">
+        <div class="product-info">
+          <h3>${p.name}</h3>
+          <p>${p.category}</p>
+          <p class="price">${rupiah(p.price)}</p>
+          <p class="stock">Stok: ${p.stock}</p>
+          <button onclick="addToCart(${p.id})"
+            ${p.stock <= 0 ? "disabled" : ""}>
+            Tambah ke Keranjang
+          </button>
+        </div>
+      </article>
+    `).join("") || "<p>Produk tidak ditemukan.</p>";
+  }
+
+  function setCategory(category, button) {
+    selectedCategory = category;
+    document.querySelectorAll(".categories button").forEach(b =>
+      b.classList.remove("active")
+    );
+    button.classList.add("active");
+    renderProducts();
+  }
+
+  function addToCart(id) {
+    const product = products.find(p => p.id === id);
+    const item = cart.find(p => p.id === id);
+    const quantity = item ? item.qty : 0;
+
+    if (quantity >= product.stock) {
+      alert("Jumlah melebihi stok yang tersedia.");
+      return;
+    }
+
+    if (item) item.qty++;
+    else cart.push({...product, qty:1});
+
+    renderCart();
+  }
+
+  function changeQty(id, amount) {
+    const item = cart.find(p => p.id === id);
+    const product = products.find(p => p.id === id);
+    if (!item) return;
+
+    if (amount > 0 && item.qty >= product.stock) {
+      alert("Stok produk tidak mencukupi.");
+      return;
+    }
+
+    item.qty += amount;
+    if (item.qty <= 0) {
+      cart = cart.filter(p => p.id !== id);
+    }
+    renderCart();
+  }
+
+  function renderCart() {
+    const cartItems = document.getElementById("cartItems");
+    const count = cart.reduce((sum, p) => sum + p.qty, 0);
+    const total = cart.reduce((sum, p) => sum + p.price * p.qty, 0);
+
+    document.getElementById("cartCount").textContent = count;
+    document.getElementById("cartTotal").textContent = rupiah(total);
+
+    if (cart.length === 0) {
+      cartItems.innerHTML = "Keranjang masih kosong.";
+      return;
+    }
+
+    cartItems.innerHTML = cart.map(p => `
+      <div class="cart-item">
+        <div>
+          <strong>${p.name}</strong><br>
+          ${rupiah(p.price)} × ${p.qty}
+        </div>
+        <div>
+          <button onclick="changeQty(${p.id}, -1)">−</button>
+          <button onclick="changeQty(${p.id}, 1)">+</button>
+        </div>
+      </div>
+    `).join("");
+  }
+
+  function checkout() {
+    if (cart.length === 0) {
+      alert("Keranjang masih kosong.");
+      return;
+    }
+
+    const name = document.getElementById("customerName").value.trim();
+    const phone = document.getElementById("customerPhone").value.trim();
+    const address = document.getElementById("customerAddress").value.trim();
+
+    if (!name || !phone || !address) {
+      alert("Mohon lengkapi nama, nomor WhatsApp, dan alamat.");
+      return;
+    }
+
+    const total = cart.reduce((sum, p) => sum + p.price * p.qty, 0);
+
+    let message = "HALO TOKO.KITA, SAYA INGIN MEMESAN PRODUK:%0A%0A";
+    message += "Nama: " + encodeURIComponent(name) + "%0A";
+    message += "Nomor pembeli: " + encodeURIComponent(phone) + "%0A";
+    message += "Alamat: " + encodeURIComponent(address) + "%0A%0A";
+    message += "DAFTAR PESANAN:%0A";
+
+    cart.forEach(p => {
+      message += "- " + encodeURIComponent(p.name) +
+        " (" + p.qty + " x " + encodeURIComponent(rupiah(p.price)) +
+        ")%0A";
+    });
+
+    message += "%0ATotal: " + encodeURIComponent(rupiah(total));
+    message += "%0A%0AMohon konfirmasi pesanan saya. Terima kasih.";
+
+    const whatsappURL = "https://wa.me/" + WA_ADMIN + "?text=" + message;
+    window.open(whatsappURL, "_blank");
+  }
+
+  renderProducts();
+  renderCart();
+</script>
+</body>
+</html>
